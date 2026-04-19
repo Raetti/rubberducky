@@ -24,7 +24,7 @@ async def generate_audio(text):
 def speak_response(text):
     logging.info("Generating and playing TTS audio...")
     asyncio.run(generate_audio(text))
-    os.system(f"mpg123 -q {OUTPUT_FILE}")
+    os.system(f"mpg123 -o pulse -q {OUTPUT_FILE}")
 
 def wait_for_file_ready(filepath, check_interval=0.5, timeout=20):
     """
