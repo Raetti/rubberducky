@@ -4,6 +4,8 @@ import logging
 import json
 import pandas as pd
 import requests
+import asyncio
+import edge_tts
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -11,6 +13,18 @@ from watchdog.events import FileSystemEventHandler
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 WATCH_DIR = "folderx"
+
+VOICE = "en-GB-RyanNeural"
+OUTPUT_FILE = "duck_response.mp3"
+
+async def generate_audio(text):
+    communicate = edge_tts.Communicate(text, VOICE)
+    await communicate.save(OUTPUT_FILE)
+
+def speak_response(text):
+    logging.info("Generating and playing TTS audio...")
+    asyncio.run(generate_audio(text))
+    os.system(f"mpg123 -q {OUTPUT_FILE}")
 
 def wait_for_file_ready(filepath, check_interval=0.5, timeout=20):
     """
@@ -124,9 +138,9 @@ def query_rubber_duck(analysis_summary, user_context="SPI Sensor Communication")
     """
     prompt = (
         f"You are an abrasive, sarcastic Rubber Duck hardware debugger.\n"
-        f"I am analyzing a circuit. Context: {user_context}.\n"
-        f"Here are the findings from the logic analyzer:\n{analysis_summary}\n\n"
-        f"Diagnose the circuit physically in 3 sentences."
+        f"The user is trying to debug: {user_context}.\n"
+        f"My logic analyzer found this:\n{analysis_summary}\n\n"
+        f"Berate the user gently and tell them what is physically wrong in 3 sentences. You MUST start your response with the word 'Quack.'"
     )
     
     try:
@@ -197,6 +211,9 @@ class VivadoCSVHandler(FileSystemEventHandler):
                 logging.info("Hardware Analysis Summary generated:\n" + analysis_summary)
                 # Send to LLM
                 ai_response = query_rubber_duck(analysis_summary)
+                
+                if ai_response:
+                    speak_response(ai_response)
             else:
                 logging.info("Hardware Analysis found no issues to report.")
             
