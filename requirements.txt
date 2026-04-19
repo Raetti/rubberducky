@@ -1,4 +1,5 @@
 watchdog==6.0.0
 pandas==2.2.3
 requests
-edge-tts
+elevenlabs
+python-dotenv

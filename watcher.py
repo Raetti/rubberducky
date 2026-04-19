@@ -4,27 +4,39 @@ import logging
 import json
 import pandas as pd
 import requests
-import asyncio
-import edge_tts
+from dotenv import load_dotenv
+from elevenlabs.client import ElevenLabs
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-WATCH_DIR = "folderx"
+load_dotenv()
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+VOICE_ID = "NFG5qt843uXKj4pFvR7C"
+client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 
-VOICE = "en-GB-RyanNeural"
+WATCH_DIR = "folderx"
 OUTPUT_FILE = "duck_response.mp3"
 
-async def generate_audio(text):
-    communicate = edge_tts.Communicate(text, VOICE)
-    await communicate.save(OUTPUT_FILE)
-
 def speak_response(text):
-    logging.info("Generating and playing TTS audio...")
-    asyncio.run(generate_audio(text))
-    os.system(f"mpg123 -o pulse -q {OUTPUT_FILE}")
+    logging.info("Generating and playing TTS audio via ElevenLabs...")
+    try:
+        audio_stream = client.text_to_speech.convert(
+            text=text,
+            voice_id=VOICE_ID,
+            model_id="eleven_multilingual_v2"
+        )
+        
+        with open(OUTPUT_FILE, "wb") as f:
+            for chunk in audio_stream:
+                if chunk:
+                    f.write(chunk)
+                    
+        os.system(f"mpv {OUTPUT_FILE}") #change to pulse-audio when not on windows, i think?
+    except Exception as e:
+        logging.error(f"Failed to generate or play TTS audio: {e}")
 
 def wait_for_file_ready(filepath, check_interval=0.5, timeout=20):
     """
