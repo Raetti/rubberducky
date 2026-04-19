@@ -131,7 +131,7 @@ def query_rubber_duck(analysis_summary, user_context="SPI Sensor Communication")
     
     try:
         response = requests.post(
-            "http://165.245.143.59/api/generate",
+            "http://165.245.143.59:11434/api/generate",
             json={
                 "model": "llama3",
                 "prompt": prompt,
